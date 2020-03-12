@@ -1,17 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title>vuetest</title>
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but vuetest doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
-    <!-- built files will be auto injected -->
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>vuetest</title>
+
+  <script type="text/javascript"
+    src='//webapi.amap.com/maps?v=1.4.15&key=2f3edc37997b0b5fd688915d6d617e50&plugin=AMap.ToolBar'></script>
+
+
+
+  <!-- <script type="text/javascript" src='//webapi.amap.com/maps?v=1.4.15&key=2f3edc37997b0b5fd688915d6d617e50'></script> -->
+  <!-- UI组件库 1.0 -->
+  <script src="//webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+</head>
+
+<body>
+  <style>
+    .searchInfo-cell {
+      background: #f2f2f2;
+    }
+
+    .searchInfo-cell:active {
+      background: white;
+    }
+
+
+    .amap-ui-poi-picker-search-results-container,
+    .amap-ui-poi-picker-sugg-container {
+      position: absolute;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+      padding: 0;
+      overflow: auto;
+      z-index: 9999;
+      /* display: none; */
+
+    }
+
+    .amap-ui-poi-picker-search-results-container p.amap_lib_placeSearch {
+      margin: 0;
+      padding: 3px 10px;
+    }
+
+    .amap-ui-poi-picker-sugg-container {
+      border: 1px solid #ccc;
+      background: red;
+    }
+
+    .amap-ui-poi-picker-search-results-container.hidden,
+    .amap-ui-poi-picker-sugg-container.hidden,
+    .amap-ui-poi-picker-sugg-container.no-sugg {
+      display: none;
+    }
+
+    .amap-ui-poi-picker-sugg-list {
+      margin: 0;
+      padding: 0;
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-item {
+      margin: 0;
+      border-bottom: 1px solid #eee;
+      font-size: 1em;
+      padding: 7px 5px 7px 23px;
+      background: url(http://webapi.amap.com/ui/1.0/ui/misc/PoiPicker/assets/poi.png) no-repeat 5px 50%;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-item.sugg-no-id {
+      background: url(http://webapi.amap.com/ui/1.0/ui/misc/PoiPicker/assets/search.png) no-repeat 5px 50%;
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-item.highlight,
+    .amap-ui-poi-picker-sugg-list .sugg-item:hover {
+      background-color: #cae1ff;
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-item:last-child {
+      border-bottom: none;
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-address {
+      /* display: none; */
+    }
+
+    .amap-ui-poi-picker-sugg-list .sugg-district {
+      font-size: 90%;
+      color: #999;
+      margin-left: 5px;
+    }
+  </style>
+  <noscript>
+    <strong>We're sorry but vuetest doesn't work properly without JavaScript enabled. Please enable it to
+      continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <!-- built files will be auto injected -->
+</body>
+
 </html>
