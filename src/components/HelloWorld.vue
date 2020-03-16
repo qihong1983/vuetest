@@ -15,7 +15,7 @@
     <!-- 地图搜索 end -->
 
     <!-- 搜索出来的内容 begin -->
-    <!-- <van-list class="searchInfo">
+    <van-list class="searchInfo">
       <van-cell
         class="searchInfo-cell"
         :title="item.name"
@@ -27,24 +27,30 @@
       >
         <van-icon slot="right-icon" style="line-height: inherit; " color="#67C23A" />
       </van-cell>
-    </van-list>-->
+    </van-list>
     <!-- 搜索出来的内容 end -->
 
     <div id="container" class="map" tabindex="0"></div>
 
     <!-- 结果列表 begin -->
 
-    <!-- <van-list class="searchResults">
+    <van-list class="searchResults">
       <van-cell
-        :title="`${item.name}`"
+        :title="index == 0 ? '\b[位置]\b ' + item.name:item.name "
         :label="`${item.address}`"
         is-link
         v-for="(item, index) in positionResult"
         :key="item+index"
+        @click="clickOkResult(item)"
       >
-        <van-icon slot="right-icon" style="line-height: inherit; " color="#67C23A" />
+        <van-icon
+          slot="right-icon"
+          :name="item.selected? 'success' : ''"
+          style="line-height: inherit; "
+          color="#67C23A"
+        />
       </van-cell>
-    </van-list>-->
+    </van-list>
     <!-- 结果列表 end -->
 
     <div id="searchResults"></div>
@@ -73,29 +79,12 @@ export default {
       loading: false,
       finished: false,
       map: null,
-      positionPicker: null
+      positionPicker: null,
+      clickSelected: true //判断就下拉点选，还是底部详情列表点选
     };
   },
 
   mounted() {
-    // lng: 116.413628
-    // lat: 39.905581
-    // this.map = new window.AMap.Map("container", {
-    //   resizeEnable: true,
-    //   zoom: 11,
-    //   center: [116.407387, 39.904179]
-    // });
-    // center: [116.407387, 39.904179]
-    // var that = this;
-    // var gps = [116.407387, 39.904179];
-    // window.AMap.convertFrom(gps, "gps", function(status, result) {
-    //   if (result.info === "ok") {
-    //     var lnglats = result.locations; // Array.<LngLat>
-    //     console.log(lnglats, "lnglats");
-    //   }
-    // });
-    // this.initMap();
-
     this.init();
   },
   components: {
@@ -112,30 +101,75 @@ export default {
       //初始化
       this.map = await new window.AMap.Map("container", {
         resizeEnable: true,
-        zoom: 11,
+        zoom: 16,
         center: new window.AMap.LngLat(116.296642, 40.050837)
       });
 
+      this.map.on("dragging", async () => {
+        this.clickSelected = true;
+      });
       //       lng: 116.296642
       // lat: 40.050837
+      var that = this;
 
       await this.initMap();
+
+      await this.map.plugin("AMap.Geolocation", async function() {
+        var geolocation = new window.AMap.Geolocation({
+          enableHighAccuracy: true, //是否使用高精度定位，默认:true
+          timeout: 10000, //超过10秒后停止定位，默认：无穷大
+          maximumAge: 0, //定位结果缓存0毫秒，默认：0
+          convert: true, //自动偏移坐标，偏移后的坐标为高德坐标，默认：true
+          showButton: true, //显示定位按钮，默认：true
+          buttonPosition: "LB", //定位按钮停靠位置，默认：'LB'，左下角
+          buttonOffset: new window.AMap.Pixel(10, 20), //定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+          showMarker: true, //定位成功后在定位到的位置显示点标记，默认：true
+          showCircle: true, //定位成功后用圆圈表示定位精度范围，默认：true
+          panToLocation: true, //定位成功后将定位到的位置作为地图中心点，默认：true
+          zoomToAccuracy: true //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+        });
+
+        await that.map.addControl(geolocation);
+
+        await window.AMap.event.addListener(geolocation, "complete", e => {
+          console.log(e, "eeee");
+          that.clickSelected = true;
+          that.positionPicker.start(e.position);
+        });
+      });
     },
     /**
      * 点击搜索
      */
     clickSearchResult(val) {
-      console.log(val, "3333333");
-
-      console.log(this, "thisthis");
-
       this.searchResult = [];
 
       this.searchValue = "";
+      this.clickSelected = true;
 
-      console.log(val, "4444");
+      this.positionPicker.start(val.location);
+    },
 
-      this.initMap(val);
+    clickOkResult(val) {
+      console.log(val, "选中位置");
+      this.clickSelected = false;
+      var list = this.positionResult;
+
+      list.map(v => {
+        // console.log(v, k);
+
+        if (val.name == v.name) {
+          v.selected = true;
+        } else {
+          v.selected = false;
+        }
+      });
+      this.positionResult = list;
+
+      this.positionPicker.start(val.location);
+      // this.positionPicker.setMode("dragMarker");
+
+      //
     },
     /**
      * 列表
@@ -149,7 +183,6 @@ export default {
           this.list.push(this.list.length + 1);
         }
 
-        console.log(this.list, "this.list");
         // 加载状态结束
         this.loading = false;
 
@@ -161,39 +194,37 @@ export default {
     },
 
     onSearch(val) {
-      console.log(val);
       var that = this;
       window.AMap.plugin("AMap.Autocomplete", function() {
         // 实例化Autocomplete
         var autoOptions = {
           // input 为绑定输入提示功能的input的DOM ID
-          input: "searchInput1",
+          // input: "searchInput1",
           city: val
         };
         var autoComplete = new window.AMap.Autocomplete(autoOptions);
         // 无需再手动执行search方法，autoComplete会根据传入input对应的DOM动态触发search
         autoComplete.search(val, function(status, result) {
           // 搜索成功时，result即是对应的匹配数据
-          console.log(result, "提示result");
-          that.searchResult = result.tips;
+
+          if (result.info && result.info == "OK") {
+            var list = [];
+            result.tips.map(v => {
+              if (v.location != "") {
+                list.push(v);
+              }
+            });
+
+            that.searchResult = list;
+          } else {
+            that.searchResult = [];
+          }
         });
 
         autoComplete.on("select", function(obj) {
-          console.log(obj, "####");
-
-          // that.map.panTo([116.405467, 39.907761]);
-          console.log(that.map.getBounds().getSouthWest());
-          console.log(that.map.getBounds().getSouthWest().lng);
-          console.log(that.map.getBounds().getSouthWest().lat);
-
           that.positionPicker.start(obj.poi.location);
-          // that.map.panBy(obj.poi.location.lng, obj.poi.location.lat);
         });
       });
-
-      // autoComplete.select(id, name, adcode, district, location, type);
-
-      // Toast(val);
     },
     changeSearch(val) {
       console.log(val);
@@ -202,25 +233,6 @@ export default {
       console.log(val);
       var that = this;
 
-      // window.AMap.service(["AMap.PlaceSearch"], function() {
-      //   //构造地点查询类
-      //   var placeSearch = new window.AMap.PlaceSearch({
-      //     pageSize: 10, // 单页显示结果条数
-      //     pageIndex: 1, // 页码
-      //     // city: "010", // 兴趣点城市
-      //     citylimit: false, //是否强制限制在设置的城市内搜索
-      //     map: that.map, // 展现结果的地图实例
-      //     // panel: "searchResults", // 结果列表将在此容器中进行展示。
-      //     autoFitView: false // 是否自动调整地图视野使绘制的 Marker点都处于视口的可见范围
-      //   });
-      //   //关键字查询
-      //   placeSearch.search("北京市");
-
-      //   placeSearch.on("complete", SearchResult => {
-      //     console.log(SearchResult, "SearchResult");
-      //   });
-      // });
-
       window.AMapUI.loadUI(
         ["misc/PositionPicker", "misc/PoiPicker", "overlay/SimpleMarker"],
         function(PositionPicker, PoiPicker, MarkerList) {
@@ -228,63 +240,38 @@ export default {
           console.log(MarkerList);
 
           console.log(PositionPicker, "PositionPicker");
-          console.log(that.map, "map");
 
           that.positionPicker = new PositionPicker({
             mode: "dragMap",
             map: that.map
           });
 
-          /**
-           * 这个是可用的 begin
-           */
-          // window.AMap.service(["AMap.PlaceSearch"], function() {
-          //   //构造地点查询类
-          //   var placeSearch = new window.AMap.PlaceSearch({
-          //     pageSize: 10, // 单页显示结果条数
-          //     pageIndex: 1, // 页码
-          //     // city: "010", // 兴趣点城市
-          //     citylimit: false, //是否强制限制在设置的城市内搜索
-          //     map: that.map, // 展现结果的地图实例
-          //     // panel: "searchResults", // 结果列表将在此容器中进行展示。
-          //     autoFitView: false // 是否自动调整地图视野使绘制的 Marker点都处于视口的可见范围
-          //   });
-          //   //关键字查询
-          //   placeSearch.search("北京市");
-
-          //   placeSearch.on("complete", SearchResult => {
-          //     console.log(SearchResult, "SearchResult");
-          //     // that.positionPicker.start(that.map.getBounds().getSouthWest());
-
-          //     that.positionPicker.start(SearchResult.poiList.pois[0].location);
-          //   });
-          // });
-          // 这个是可用的 end
-
-          console.log(that.positionPicker, "positionPicker");
           that.positionPicker.on("success", function(positionResult) {
-            console.log(positionResult);
-            console.log(that, "thatthatthatthat");
-
-            // that.positionResult = positionResult.regeocode.pois;
-
+            console.log(positionResult, "positionResult");
+            if (!that.clickSelected) {
+              return;
+            }
             var pois = positionResult.regeocode.pois;
 
             var list = [];
 
-            pois.map(v => {
-              list.push({
-                name: v.name,
-                address: v.address,
-                location: v.location
-              });
+            pois.map((v, k) => {
+              if (k == 0) {
+                list.push({
+                  name: v.name,
+                  address: v.address,
+                  location: v.location,
+                  selected: true
+                });
+              } else {
+                list.push({
+                  name: v.name,
+                  address: v.address,
+                  location: v.location,
+                  selected: false
+                });
+              }
             });
-
-            // list.unshift({
-            //   name: "xxx",
-            //   address: "yyyy",
-            //   location: `zzzz`
-            // });
 
             console.log(list, "list");
 
@@ -295,31 +282,13 @@ export default {
           that.positionPicker.on("fail", function(positionResult) {
             console.log(positionResult, "positionResult");
           });
+
           that.positionPicker.setMode("dragMap");
 
           console.log(that.map.getBounds().getSouthWest(), "*****");
 
-          // var that = this;
-          // var gps = [116.407387, 39.904179];
-          // window.AMap.convertFrom(gps, "gps", function(status, result) {
-          //   if (result.info === "ok") {
-          //     var lnglats = result.locations; // Array.<LngLat>
-
-          //     console.log(lnglats, "lnglats");
-          //     that.positionPicker.start(that.map.getBounds().getSouthWest());
-          //   }
-          // });
-
-          // console.log(
-          //   new window.AMap.LngLat(116.407387, 39.904179),
-          //   "jingweidu"
-          // );
-
-          // that.positionPicker.start(that.map.getBounds().getSouthWest());
-          // that.positionPicker.start(
-          //   new window.AMap.LngLat(116.407387, 39.904179)
-          // );
           that.positionPicker.start();
+
           that.map.panBy(0, 1);
           // that.map.panBy(116.407387, 39.904179);
 
@@ -387,7 +356,7 @@ a {
   position: absolute;
   width: 100vw;
   z-index: 100000;
-  display: none;
+  // display: none;
 }
 
 // .searchInfo-cell {
